@@ -231,6 +231,7 @@
         <div class="score-big"><span id="total-score">0</span><small> / 40</small></div>
         <div class="stack" style="gap:8px">
           <div><span class="pill" id="band"></span></div>
+          <p id="split" style="font-weight:600;font-variant-numeric:tabular-nums"></p>
           <p id="overall"></p>
           <p class="muted" id="marker-note" style="font-size:0.85rem"></p>
         </div>
@@ -523,6 +524,7 @@
     $('grading').hidden = true; $('results-body').hidden = false;
     $('total-score').textContent = r.total;
     $('band').textContent = bandFor(r.total);
+    $('split').textContent = 'Task 1.1 Summary: ' + r.task1.total + ' / 15   •   Task 1.2 Essay: ' + r.task2.total + ' / 25';
     $('overall').textContent = r.overall || '';
     $('marker-note').textContent = state.resultSource === 'ai'
       ? 'Marked by Claude against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25).'
