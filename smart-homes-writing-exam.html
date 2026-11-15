@@ -1,0 +1,697 @@
+<title>Smart Homes Writing Exam</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Literata:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Layout: one centred exam column (max 860px), sticky status bar with the clock, paper-like reading passage, two answer sheets, then a mark sheet. */
+  :root {
+    --bg: #eef1f5;
+    --paper: #ffffff;
+    --paper-2: #f6f8fb;
+    --fg: #16212c;
+    --muted: #5d6d7e;
+    --line: #d5dce4;
+    --accent: #0b5fa5;
+    --accent-soft: #e3eefa;
+    --warn: #a86400;
+    --warn-soft: #fff3dc;
+    --danger: #b3261e;
+    --danger-soft: #fde7e5;
+    --good: #1e7a4c;
+    --good-soft: #e3f4ea;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-read: "Literata", Georgia, "Times New Roman", serif;
+    --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f151c; --paper: #171f28; --paper-2: #1e2834; --fg: #e7ecf1; --muted: #9aa8b6; --line: #2d3946;
+      --accent: #63adf2; --accent-soft: #15314b; --warn: #f0b24a; --warn-soft: #3a2a0d; --danger: #ff8a80; --danger-soft: #44201d;
+      --good: #5ecb8f; --good-soft: #15352a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f151c; --paper: #171f28; --paper-2: #1e2834; --fg: #e7ecf1; --muted: #9aa8b6; --line: #2d3946;
+    --accent: #63adf2; --accent-soft: #15314b; --warn: #f0b24a; --warn-soft: #3a2a0d; --danger: #ff8a80; --danger-soft: #44201d;
+    --good: #5ecb8f; --good-soft: #15352a; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; margin: 0; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+  .wrap { max-width: 860px; margin: 0 auto; padding-block: 0 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 1.25rem; font-weight: 600; }
+  h3 { font-size: 1rem; font-weight: 600; }
+  p { margin: 0; }
+  .eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .muted { color: var(--muted); }
+  .stack { display: grid; gap: 16px; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .btn { font: inherit; font-weight: 600; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+  .btn:hover { filter: brightness(1.07); }
+  .btn:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn.secondary { background: transparent; color: var(--accent); }
+  .btn.danger { background: var(--danger); border-color: var(--danger); }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+  input[type="text"] { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--fg); width: 100%; max-width: 360px; }
+  .rules { display: grid; gap: 8px; padding-left: 20px; margin: 0; }
+  .rules li { padding-left: 4px; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+  /* Status bar */
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: var(--paper); border-bottom: 1px solid var(--line); margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 24px calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .bar-in { max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+  .bar-in .grow { flex: 1 1 200px; min-width: 0; }
+  .clock { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--fg); }
+  .clock.low { color: var(--warn); }
+  .clock.critical { color: var(--danger); }
+  .viol { font-size: 0.85rem; color: var(--muted); }
+  .viol b { color: var(--danger); }
+  .banner { border-radius: 8px; padding: 10px 14px; font-weight: 500; border: 1px solid transparent; }
+  .banner.warn { background: var(--warn-soft); border-color: var(--warn); color: var(--fg); }
+  .banner.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--fg); }
+  .banner.good { background: var(--good-soft); border-color: var(--good); color: var(--fg); }
+  .banner.info { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); }
+
+  /* Passage */
+  .passage { font-family: var(--font-read); font-size: 1.05rem; line-height: 1.7; background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; padding: 20px 22px; display: grid; gap: 14px; user-select: none; -webkit-user-select: none; }
+  .passage h3 { font-family: var(--font-read); font-weight: 600; font-size: 1.15rem; }
+  .task-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .marks { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .bullets { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+  textarea { width: 100%; min-height: 160px; resize: vertical; font: inherit; font-size: 1rem; line-height: 1.6; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--fg); }
+  textarea.essay { min-height: 380px; }
+  .counter { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .counter .ok { color: var(--good); font-weight: 600; }
+  .counter .short { color: var(--warn); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+  /* Results */
+  .score-hero { display: grid; grid-template-columns: auto 1fr; gap: 20px 28px; align-items: center; }
+  .score-big { font-family: var(--font-mono); font-size: clamp(2.6rem, 8vw, 4rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .score-big small { font-size: 0.4em; color: var(--muted); font-weight: 500; }
+  .crit { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .crit th, .crit td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .crit th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  .crit td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; font-weight: 700; }
+  .crit tr.total td { font-weight: 700; border-bottom: none; }
+  .meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .meter i { display: block; height: 100%; background: var(--accent); }
+  .list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .corr { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .corr th, .corr td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .corr th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .corr td.o { color: var(--danger); text-decoration: line-through; }
+  .corr td.c { color: var(--good); font-weight: 600; }
+  .answer { white-space: pre-wrap; font-family: var(--font-read); background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; line-height: 1.65; }
+  .two { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .two > * { min-width: 0; }
+  .table-wrap { overflow-x: auto; }
+  .spin { display: inline-block; width: 18px; height: 18px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; vertical-align: -4px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+  @media (max-width: 480px) { .score-hero { grid-template-columns: 1fr; } .card { padding: 16px; } }
+</style>
+
+<div class="wrap">
+
+  <!-- START -->
+  <section id="screen-start" class="stack" style="padding-top:28px">
+    <div>
+      <p class="eyebrow">Grade 12 Advanced English • EoT1 • Part 4 Writing</p>
+      <h1>Smart Homes Writing Exam</h1>
+      <p class="muted" style="margin-top:6px">Lockdown mode • 1 hour 30 minutes • 40 marks • marked automatically after you submit</p>
+    </div>
+
+    <div class="card stack">
+      <h2>What is in the exam</h2>
+      <div class="table-wrap">
+        <table class="crit">
+          <thead><tr><th>Task</th><th>What you do</th><th>Length</th><th>Marks</th></tr></thead>
+          <tbody>
+            <tr><td>1.1 Summary</td><td>Read a text with two points of view on smart homes. Compare and contrast them and summarise the main ideas in your own words.</td><td>4–5 sentences</td><td class="num">15</td></tr>
+            <tr><td>1.2 Comparative essay</td><td>Write a comparative essay on a related topic. Compare the views, say which one you agree with, and support your choice with reasons and examples.</td><td>220+ words</td><td class="num">25</td></tr>
+            <tr class="total"><td colspan="3">Total</td><td class="num">40</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h2>Lockdown rules</h2>
+      <ol class="rules">
+        <li>The exam opens in full screen. The clock starts the moment you press <b>Begin</b> and does not pause.</li>
+        <li>Leaving the exam tab, switching windows or exiting full screen is recorded as a <b>violation</b>. After <b>3 violations</b> the exam submits itself.</li>
+        <li>Copy, cut, paste, drag-and-drop and right-click are disabled. Everything must be typed.</li>
+        <li>If you close or refresh the page by accident, reopen it: your answers and the clock continue from where they were.</li>
+        <li>When the clock reaches 00:00 the exam submits automatically with whatever you have written.</li>
+        <li>After submission, your writing is marked out of 40 against the EoT1 rubric and you get a breakdown with corrections.</li>
+      </ol>
+    </div>
+
+    <div class="card stack">
+      <label for="student-name"><b>Your name</b> <span class="muted">(shown on the mark sheet)</span></label>
+      <input type="text" id="student-name" placeholder="Full name" autocomplete="off">
+      <div class="actions">
+        <button class="btn" id="btn-begin">Begin exam</button>
+        <span class="muted">One of three Smart Homes sets is chosen at random.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXAM -->
+  <section id="screen-exam" hidden>
+    <div class="bar">
+      <div class="bar-in">
+        <div class="grow">
+          <p class="eyebrow">Part 4 • Writing • <span id="set-label"></span></p>
+          <p class="viol">Violations: <b id="viol-count">0</b> / 3 <span id="student-label" class="muted"></span></p>
+        </div>
+        <div class="clock" id="clock">90:00</div>
+        <button class="btn" id="btn-submit-top">Submit</button>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div id="banner" class="banner warn" hidden></div>
+
+      <div class="card stack">
+        <div class="task-head">
+          <h2>Task 1.1 — Summary</h2>
+          <span class="marks">15 marks</span>
+        </div>
+        <p>Read the text. Compare and contrast the two points of view presented. Summarise the main ideas <b>in your own words</b>. Write <b>4–5 sentences</b>.</p>
+        <div class="passage" id="passage"></div>
+        <label for="ans1"><b>1.1 Your summary</b></label>
+        <textarea id="ans1" spellcheck="false" autocomplete="off" placeholder="Write 4–5 sentences here."></textarea>
+        <div class="counter"><span>Words: <span id="wc1">0</span></span><span>Sentences: <span id="sc1">0</span> <span id="sc1-note"></span></span></div>
+      </div>
+
+      <div class="card stack">
+        <div class="task-head">
+          <h2>Task 1.2 — Comparative essay</h2>
+          <span class="marks">25 marks</span>
+        </div>
+        <p id="essay-prompt"></p>
+        <p>In your essay:</p>
+        <ul class="bullets" id="essay-bullets"></ul>
+        <p>Write <b>at least 220 words</b> in paragraphs (aim for 220–250).</p>
+        <label for="ans2"><b>1.2 Your essay</b></label>
+        <textarea id="ans2" class="essay" spellcheck="false" autocomplete="off" placeholder="Write your essay here. Leave an empty line between paragraphs."></textarea>
+        <div class="counter"><span>Words: <span id="wc2">0</span> <span id="wc2-note"></span></span><span>Paragraphs: <span id="pc2">0</span></span></div>
+      </div>
+
+      <div class="card stack" id="submit-card">
+        <h2>Finished?</h2>
+        <p class="muted">Check both answers. After you submit you cannot change anything, and marking starts immediately.</p>
+        <div class="actions" id="submit-actions">
+          <button class="btn" id="btn-submit">Submit exam</button>
+        </div>
+        <div class="actions" id="confirm-actions" hidden>
+          <span><b>Submit now?</b> This cannot be undone.</span>
+          <button class="btn danger" id="btn-confirm">Yes, submit</button>
+          <button class="btn secondary" id="btn-cancel">Keep writing</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-results" class="stack" style="padding-top:28px" hidden>
+    <div>
+      <p class="eyebrow">Mark sheet • Part 4 Writing</p>
+      <h1>Your result</h1>
+      <p class="muted" id="result-meta" style="margin-top:6px"></p>
+    </div>
+
+    <div id="grading" class="card"><span class="spin"></span><span id="grading-text">Marking your writing…</span></div>
+
+    <div id="results-body" class="stack" hidden>
+      <div class="card score-hero">
+        <div class="score-big"><span id="total-score">0</span><small> / 40</small></div>
+        <div class="stack" style="gap:8px">
+          <div><span class="pill" id="band"></span></div>
+          <p id="overall"></p>
+          <p class="muted" id="marker-note" style="font-size:0.85rem"></p>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="card stack">
+          <h2>Task 1.1 Summary <span class="marks" id="t1-total"></span></h2>
+          <table class="crit" id="t1-table"></table>
+          <ul class="list" id="t1-comments"></ul>
+        </div>
+        <div class="card stack">
+          <h2>Task 1.2 Essay <span class="marks" id="t2-total"></span></h2>
+          <table class="crit" id="t2-table"></table>
+          <ul class="list" id="t2-comments"></ul>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="card stack">
+          <h3>What you did well</h3>
+          <ul class="list" id="strengths"></ul>
+        </div>
+        <div class="card stack">
+          <h3>What to improve next time</h3>
+          <ul class="list" id="improvements"></ul>
+        </div>
+      </div>
+
+      <div class="card stack" id="corr-card">
+        <h3>Language corrections</h3>
+        <div class="table-wrap">
+          <table class="corr" id="corr-table"></table>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <h3>Your summary (1.1)</h3>
+        <div class="answer" id="show1"></div>
+        <h3>Your essay (1.2)</h3>
+        <div class="answer" id="show2"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" id="btn-retry-mark" hidden>Mark again</button>
+        <button class="btn" id="btn-new">Start a new exam</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var DURATION = 90 * 60; // seconds
+  var MAX_VIOL = 3;
+  var KEY = 'shwe-v1';
+
+  // ---------- Exam sets (Smart Homes theme, UAE context) ----------
+  var SETS = [
+    {
+      id: 'A',
+      title: 'Smart Kitchens: A Helping Hand or a Waste of Money?',
+      passage: [
+        'Noura, a 38-year-old nurse in Sharjah, works twelve-hour shifts and says her smart kitchen keeps the family fed. Her fridge scans what is inside and sends a shopping list to her phone, while the oven can be switched on from the car so dinner is hot when she walks in. "The app even suggests meals from the food we already have, so we throw away much less," she explains. A smart kettle, a robot vacuum and a voice assistant that reads recipes aloud all save her small pieces of time. For Noura, these minutes add up to one thing: a proper meal with her children every evening instead of fast food.',
+        'Hamad, a 61-year-old chef who has run a small restaurant in Al Ain for thirty years, is not impressed. "Cooking is a skill you learn with your hands and your nose, not with a screen," he says. He points out that a smart oven costs three times the price of a normal one and still needs someone to prepare the food. When a software update failed, his nephew\'s fridge stopped showing the temperature for two days. Hamad also worries that children who grow up with a kitchen that "does the thinking" will never learn to cook at all. In his view, a sharp knife, a good pan and a grandmother\'s recipe are cheaper, more reliable and far more valuable.'
+      ],
+      sideA: { name: 'Noura', keys: ['noura', 'nurse', 'shopping list', 'fridge', 'oven', 'waste', 'time', 'meal', 'children', 'app', 'phone', 'save'] },
+      sideB: { name: 'Hamad', keys: ['hamad', 'chef', 'skill', 'hands', 'price', 'cost', 'expensive', 'update', 'stopped', 'learn to cook', 'reliable', 'recipe', 'knife'] },
+      essay: 'Write an essay about preparing food at home in which you compare cooking with smart kitchen appliances with cooking in a traditional way.',
+      bullets: [
+        'Compare the main advantages and disadvantages of each way of cooking.',
+        'Explain which point of view you agree with (Noura\'s or Hamad\'s), and give your reasons.',
+        'Support your choice with examples from your own life or from the UAE.'
+      ]
+    },
+    {
+      id: 'B',
+      title: 'Should Smart Homes Watch Over Teenagers?',
+      passage: [
+        'Fatima, a mother of four in Dubai, installed a full smart-home system last year and says it has given her peace of mind. Door sensors tell her when each child comes home, the Wi-Fi switches off automatically at eleven o\'clock, and a camera in the hallway lets her check that homework is being done while she is at work. "I am not spying," she insists. "I am a working parent, and the house helps me be in two places at once." When her youngest son forgot his key, she unlocked the door from her office in seconds. For Fatima, the system has made her family safer and her evenings calmer.',
+        'Majid, a 17-year-old student in Ajman, lives in a similar house and feels very differently. "My parents can see when I open the fridge," he says. "How am I supposed to learn responsibility if a machine does all the trusting for me?" He argues that teenagers need some privacy to become independent adults, and that a home full of sensors teaches them to hide things rather than to talk. He also points out that the family router was hacked once, which means a stranger could have watched the hallway camera too. In Majid\'s view, clear rules and honest conversation protect young people better than any notification.'
+      ],
+      sideA: { name: 'Fatima', keys: ['fatima', 'mother', 'parent', 'peace of mind', 'sensor', 'camera', 'safe', 'wi-fi', 'wifi', 'homework', 'unlock', 'work', 'calm'] },
+      sideB: { name: 'Majid', keys: ['majid', 'teenager', 'student', 'privacy', 'responsib', 'independen', 'trust', 'hide', 'hacked', 'rules', 'conversation', 'talk'] },
+      essay: 'Write an essay about raising teenagers in which you compare using smart-home technology to monitor young people with relying on trust, rules and conversation.',
+      bullets: [
+        'Compare the benefits and drawbacks of each approach to parenting.',
+        'Explain which point of view you agree with (Fatima\'s or Majid\'s), and give your reasons.',
+        'Support your choice with examples from your own life or from the UAE.'
+      ]
+    },
+    {
+      id: 'C',
+      title: 'Smart Homes and the Environment: Green Gadgets or Hidden Waste?',
+      passage: [
+        'Dr Latifa Al Shamsi, a sustainability consultant who advised on several projects in Masdar City, believes smart homes are essential if the UAE is to cut its energy use. "A smart meter shows a family exactly which device is wasting electricity, and that knowledge changes behaviour," she says. Leak sensors under sinks have saved thousands of litres of water in homes she has studied, and smart air conditioning that learns a family\'s routine can reduce cooling costs by a fifth. She adds that solar panels work best when a smart system decides, minute by minute, whether to store power, use it or sell it back to the grid.',
+        'Omar, who runs an electronics repair shop in Fujairah, sees the other side of the story every day. "People bring me smart plugs and speakers that are three years old and already dead," he says. "Most cannot be fixed, so they go into the bin." He points out that every device contains plastics, rare metals and a battery, and that making and shipping them produces pollution long before they save a single watt at home. In his experience, most families buy gadgets and then forget to change their habits. Omar believes that closing the curtains, fixing a dripping tap and switching things off by hand do more for the planet than a house full of electronics.'
+      ],
+      sideA: { name: 'Latifa', keys: ['latifa', 'consultant', 'masdar', 'energy', 'meter', 'electricity', 'leak', 'water', 'cooling', 'air conditioning', 'solar', 'reduce', 'save'] },
+      sideB: { name: 'Omar', keys: ['omar', 'repair', 'dead', 'fixed', 'bin', 'waste', 'plastic', 'metal', 'battery', 'pollution', 'habits', 'curtains', 'tap', 'switch'] },
+      essay: 'Write an essay about protecting the environment at home in which you compare using smart technology with changing simple daily habits.',
+      bullets: [
+        'Compare the costs and benefits of each approach for the environment.',
+        'Explain which point of view you agree with (Dr Latifa\'s or Omar\'s), and give your reasons.',
+        'Support your choice with examples from your own life or from the UAE.'
+      ]
+    }
+  ];
+
+  var WORD_BANK = ['device', 'gadget', 'sensor', 'thermostat', 'smart lock', 'voice assistant', 'app', 'notification', 'subscription', 'software update', 'personal data', 'energy bill', 'convenience', 'security', 'dependence', 'control remotely', 'switch on', 'switch off', 'monitor', 'detect', 'record', 'store', 'hack', 'install', 'rely on', 'depend on', 'save energy', 'save time', 'reduce', 'malfunction', 'convenient', 'efficient', 'reliable', 'unreliable', 'user-friendly', 'costly', 'cost-effective', 'secure', 'vulnerable', 'intrusive', 'time-saving', 'outdated', 'electricity bill', 'personal data', 'privacy', 'internet connection', 'peace of mind', 'daily life', 'technology'];
+  var LINKERS = ['both', 'similarly', 'likewise', 'in the same way', 'just like', 'whereas', 'while', 'unlike', 'in contrast', 'on the other hand', 'however', 'more than', 'less than', 'compared with', 'compared to', 'the main difference', 'in my opinion', 'from my point of view', 'i strongly believe', 'i agree with', 'for example', 'for instance', 'such as', 'therefore', 'as a result', 'for this reason', 'this means that', 'to sum up', 'overall', 'all things considered', 'in addition', 'moreover', 'furthermore', 'to begin with', 'firstly', 'secondly', 'finally', 'in conclusion', 'personally'];
+
+  // ---------- State ----------
+  var state = load() || { name: '', setIdx: null, startAt: null, violations: 0, a1: '', a2: '', submitted: false, submitReason: '', result: null, resultSource: '' };
+  var timer = null;
+  var lastViol = 0;
+  var examActive = false;
+
+  function load() { try { var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+  function show(id) { ['screen-start', 'screen-exam', 'screen-results'].forEach(function (s) { $(s).hidden = (s !== id); }); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---------- Text helpers ----------
+  function words(t) { var m = String(t || '').trim().match(/[A-Za-z؀-ۿ0-9'’-]+/g); return m ? m : []; }
+  function sentences(t) { var s = String(t || '').trim().replace(/\s+/g, ' '); if (!s) return 0; var m = s.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g); return m ? m.filter(function (x) { return words(x).length > 1; }).length : 0; }
+  function paragraphs(t) { return String(t || '').split(/\n\s*\n|\n/).map(function (p) { return p.trim(); }).filter(function (p) { return words(p).length > 3; }).length; }
+
+  // ---------- Start ----------
+  $('btn-begin').addEventListener('click', function () {
+    state.name = $('student-name').value.trim();
+    state.setIdx = Math.floor(Math.random() * SETS.length);
+    state.startAt = Date.now();
+    state.violations = 0; state.a1 = ''; state.a2 = ''; state.submitted = false; state.result = null; state.resultSource = ''; state.submitReason = '';
+    save();
+    var el = document.documentElement;
+    try { var p = (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+    openExam();
+  });
+
+  function openExam() {
+    var set = SETS[state.setIdx];
+    $('set-label').textContent = 'Smart Homes • Set ' + set.id;
+    $('student-label').textContent = state.name ? '• ' + state.name : '';
+    $('passage').innerHTML = '<h3>' + esc(set.title) + '</h3>' + set.passage.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    $('essay-prompt').innerHTML = esc(set.essay) + ' <span class="marks">(25 marks)</span>';
+    $('essay-bullets').innerHTML = set.bullets.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('');
+    $('ans1').value = state.a1 || ''; $('ans2').value = state.a2 || '';
+    $('viol-count').textContent = state.violations;
+    updateCounts();
+    show('screen-exam');
+    examActive = true;
+    tick();
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, 500);
+    window.scrollTo(0, 0);
+  }
+
+  function remaining() { return Math.max(0, DURATION - Math.floor((Date.now() - state.startAt) / 1000)); }
+  function tick() {
+    var r = remaining();
+    var m = Math.floor(r / 60), s = r % 60;
+    var c = $('clock');
+    c.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    c.className = 'clock' + (r <= 300 ? ' critical' : (r <= 900 ? ' low' : ''));
+    if (r <= 0 && examActive) submit('time');
+  }
+
+  // ---------- Answers ----------
+  function updateCounts() {
+    var a1 = $('ans1').value, a2 = $('ans2').value;
+    var w1 = words(a1).length, s1 = sentences(a1), w2 = words(a2).length, p2 = paragraphs(a2);
+    $('wc1').textContent = w1; $('sc1').textContent = s1;
+    $('sc1-note').innerHTML = s1 === 0 ? '' : (s1 >= 4 && s1 <= 5 ? '<span class="ok">(4–5 ✓)</span>' : '<span class="short">(aim for 4–5)</span>');
+    $('wc2').textContent = w2; $('pc2').textContent = p2;
+    $('wc2-note').innerHTML = w2 === 0 ? '' : (w2 >= 220 ? '<span class="ok">(220+ ✓)</span>' : '<span class="short">(' + (220 - w2) + ' more to reach 220)</span>');
+  }
+  var saveT = null;
+  ['ans1', 'ans2'].forEach(function (id) {
+    var ta = $(id);
+    ta.addEventListener('input', function () {
+      state.a1 = $('ans1').value; state.a2 = $('ans2').value;
+      updateCounts();
+      clearTimeout(saveT); saveT = setTimeout(save, 400);
+    });
+    ['paste', 'copy', 'cut', 'drop'].forEach(function (ev) { ta.addEventListener(ev, function (e) { if (examActive) { e.preventDefault(); flash('Copy, cut and paste are disabled in this exam. Please type your answer.', 'warn'); } }); });
+  });
+  document.addEventListener('contextmenu', function (e) { if (examActive) e.preventDefault(); });
+  document.addEventListener('keydown', function (e) {
+    if (!examActive) return;
+    var k = (e.key || '').toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && (k === 'v' || k === 'c' || k === 'x' || k === 'p' || k === 's' || k === 'u')) { e.preventDefault(); }
+  });
+  window.addEventListener('beforeunload', function (e) { if (examActive) { e.preventDefault(); e.returnValue = ''; } });
+
+  // ---------- Violations ----------
+  function violation(why) {
+    if (!examActive) return;
+    var now = Date.now();
+    if (now - lastViol < 1500) return;
+    lastViol = now;
+    state.violations += 1; save();
+    $('viol-count').textContent = state.violations;
+    if (state.violations >= MAX_VIOL) {
+      flash('Violation ' + state.violations + ' of ' + MAX_VIOL + ' (' + why + '). The exam has been submitted automatically.', 'danger');
+      submit('violations');
+    } else {
+      flash('Warning ' + state.violations + ' of ' + MAX_VIOL + ': ' + why + '. Stay on this page in full screen. After ' + MAX_VIOL + ' violations the exam submits itself.', 'danger');
+    }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) violation('you left the exam tab'); });
+  window.addEventListener('blur', function () { if (examActive && document.hasFocus && !document.hasFocus()) violation('the exam window lost focus'); });
+  document.addEventListener('fullscreenchange', function () { if (examActive && !document.fullscreenElement && (Date.now() - state.startAt) > 3000) violation('you exited full screen'); });
+
+  var flashT = null;
+  function flash(msg, kind) {
+    var b = $('banner');
+    b.textContent = msg; b.className = 'banner ' + (kind || 'warn'); b.hidden = false;
+    clearTimeout(flashT);
+    if (kind !== 'danger') flashT = setTimeout(function () { b.hidden = true; }, 6000);
+  }
+
+  // ---------- Submit ----------
+  function askConfirm() { $('submit-actions').hidden = true; $('confirm-actions').hidden = false; $('submit-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  $('btn-submit').addEventListener('click', askConfirm);
+  $('btn-submit-top').addEventListener('click', askConfirm);
+  $('btn-cancel').addEventListener('click', function () { $('submit-actions').hidden = false; $('confirm-actions').hidden = true; });
+  $('btn-confirm').addEventListener('click', function () { submit('student'); });
+
+  function submit(reason) {
+    if (!examActive) return;
+    examActive = false;
+    clearInterval(timer);
+    state.a1 = $('ans1').value; state.a2 = $('ans2').value;
+    state.submitted = true; state.submitReason = reason; state.submittedAt = Date.now(); save();
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {}); } catch (e) {}
+    openResults();
+    grade();
+  }
+
+  // ---------- Results ----------
+  function openResults() {
+    var set = SETS[state.setIdx];
+    var reasonText = { time: 'submitted automatically when time ran out', violations: 'submitted automatically after 3 lockdown violations', student: 'submitted by the student' }[state.submitReason] || '';
+    var used = state.submittedAt ? Math.min(DURATION, Math.round((state.submittedAt - state.startAt) / 1000)) : 0;
+    $('result-meta').textContent = (state.name ? state.name + ' • ' : '') + 'Set ' + set.id + ' • ' + set.title + ' • time used ' + Math.floor(used / 60) + ' min • ' + reasonText + ' • violations: ' + state.violations;
+    $('show1').textContent = state.a1 || '(no answer)';
+    $('show2').textContent = state.a2 || '(no answer)';
+    show('screen-results');
+    window.scrollTo(0, 0);
+    if (state.result) { render(state.result); }
+    else { $('grading').hidden = false; $('results-body').hidden = true; }
+  }
+
+  function clamp(v, max) { v = Number(v); if (isNaN(v)) v = 0; return Math.max(0, Math.min(max, Math.round(v))); }
+  function arr(a, n) { return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string' && x.trim(); }).slice(0, n) : []; }
+
+  function normalise(r) {
+    var t1 = r.task1 || {}, t2 = r.task2 || {};
+    var o = {
+      task1: { content: clamp(t1.content, 6), comparison: clamp(t1.comparison, 5), language: clamp(t1.language, 4), comments: arr(t1.comments, 4) },
+      task2: { task: clamp(t2.task, 7), organisation: clamp(t2.organisation, 6), vocabulary: clamp(t2.vocabulary, 6), grammar: clamp(t2.grammar, 6), comments: arr(t2.comments, 5) },
+      overall: typeof r.overall === 'string' ? r.overall : '',
+      strengths: arr(r.strengths, 5), improvements: arr(r.improvements, 5),
+      corrections: Array.isArray(r.corrections) ? r.corrections.filter(function (c) { return c && typeof c.original === 'string' && typeof c.corrected === 'string'; }).slice(0, 10) : []
+    };
+    o.task1.total = o.task1.content + o.task1.comparison + o.task1.language;
+    o.task2.total = o.task2.task + o.task2.organisation + o.task2.vocabulary + o.task2.grammar;
+    o.total = o.task1.total + o.task2.total;
+    return o;
+  }
+
+  function bandFor(t) {
+    var pct = t / 40;
+    if (pct >= 0.9) return 'Outstanding (A)';
+    if (pct >= 0.8) return 'Very good (B)';
+    if (pct >= 0.7) return 'Good (C)';
+    if (pct >= 0.6) return 'Satisfactory (D)';
+    if (pct >= 0.5) return 'Pass (E)';
+    return 'Below pass (F)';
+  }
+
+  function row(label, v, max) {
+    return '<tr><td>' + esc(label) + '<div class="meter"><i style="width:' + Math.round(100 * v / max) + '%"></i></div></td><td class="num">' + v + ' / ' + max + '</td></tr>';
+  }
+
+  function render(r) {
+    $('grading').hidden = true; $('results-body').hidden = false;
+    $('total-score').textContent = r.total;
+    $('band').textContent = bandFor(r.total);
+    $('overall').textContent = r.overall || '';
+    $('marker-note').textContent = state.resultSource === 'ai'
+      ? 'Marked by Claude against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25).'
+      : 'Estimated by the built-in rule-based marker (word counts, structure, linkers, topic vocabulary). Open this page inside claude.ai for full AI marking of content and grammar.';
+    $('t1-total').textContent = r.task1.total + ' / 15';
+    $('t1-table').innerHTML = '<thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>' + row('Content: both views and main ideas covered', r.task1.content, 6) + row('Comparison and contrast in own words', r.task1.comparison, 5) + row('Language, accuracy and length (4–5 sentences)', r.task1.language, 4) + '</tbody>';
+    $('t1-comments').innerHTML = r.task1.comments.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+    $('t2-total').textContent = r.task2.total + ' / 25';
+    $('t2-table').innerHTML = '<thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>' + row('Task achievement: all three prompts, 220+ words', r.task2.task, 7) + row('Organisation: paragraphs, linkers, comparison structure', r.task2.organisation, 6) + row('Vocabulary: range and topic words', r.task2.vocabulary, 6) + row('Grammar and accuracy', r.task2.grammar, 6) + '</tbody>';
+    $('t2-comments').innerHTML = r.task2.comments.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+    $('strengths').innerHTML = r.strengths.length ? r.strengths.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') : '<li class="muted">None recorded.</li>';
+    $('improvements').innerHTML = r.improvements.length ? r.improvements.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') : '<li class="muted">None recorded.</li>';
+    if (r.corrections.length) {
+      $('corr-card').hidden = false;
+      $('corr-table').innerHTML = '<thead><tr><th>You wrote</th><th>Better</th><th>Why</th></tr></thead><tbody>' + r.corrections.map(function (c) { return '<tr><td class="o">' + esc(c.original) + '</td><td class="c">' + esc(c.corrected) + '</td><td>' + esc(c.note || '') + '</td></tr>'; }).join('') + '</tbody>';
+    } else { $('corr-card').hidden = true; }
+    $('btn-retry-mark').hidden = state.resultSource === 'ai';
+  }
+
+  // ---------- Marking ----------
+  function buildPrompt(set) {
+    return [
+      'You are a strict, fair examiner marking Part 4 (Writing) of the UAE Grade 12 Advanced English End-of-Term 1 exam. Mark the two answers below out of 40 using the rubric exactly. Return ONLY a JSON object, no markdown, no explanation outside the JSON.',
+      '',
+      '=== SOURCE TEXT (two points of view) ===',
+      'Title: ' + set.title,
+      set.passage.join('\n\n'),
+      '',
+      '=== TASK 1.1 (15 marks) ===',
+      'Read the text. Compare and contrast the two points of view presented. Summarise the main ideas in your own words. Write 4–5 sentences.',
+      'Rubric 1.1:',
+      '- content (0–6): covers BOTH people\'s main ideas accurately (each side about 3 marks). Missing a side = max 3. Wrong or invented ideas lose marks.',
+      '- comparison (0–5): explicitly compares/contrasts the two views (whereas, unlike, both, on the other hand...) AND paraphrases in own words. Copying sentences or long phrases from the text = max 2.',
+      '- language (0–4): grammar, spelling, punctuation, sentence control; 4–5 complete sentences. 3 or 6 sentences = max 3; much shorter/longer = max 2.',
+      'Empty, off-topic or unreadable answer = 0 in every criterion.',
+      '',
+      '=== TASK 1.2 (25 marks) ===',
+      set.essay,
+      'In your essay: ' + set.bullets.join(' | '),
+      'Write at least 220 words in paragraphs.',
+      'Rubric 1.2:',
+      '- task (0–7): answers ALL three prompts (compares both sides, states clearly which view the writer agrees with and why, gives examples from own life or the UAE). Under 220 words: max 5. Under 180 words: max 4. Under 120 words: max 2. One prompt missing: minus 2. Off-topic = 0.',
+      '- organisation (0–6): introduction, clearly separated body paragraphs, conclusion; logical comparison structure; range of linkers (whereas, however, on the other hand, in contrast, for example, therefore, to sum up...). Fewer than 3 paragraphs = max 3.',
+      '- vocabulary (0–6): range and precision; appropriate topic vocabulary (device, sensor, convenient, reliable, privacy, personal data, energy bill, cost-effective, rely on, monitor...). Repetitive, basic words = max 3.',
+      '- grammar (0–6): accuracy of tenses, articles, subject-verb agreement, comparatives (never "more better"), punctuation and spelling. Frequent errors that hurt meaning = max 2.',
+      'Empty, off-topic or unreadable essay = 0 in every criterion. Do not reward length alone. Do not be generous: a typical competent Grade 12 Advanced essay scores 16–19 out of 25.',
+      '',
+      '=== STUDENT ANSWER 1.1 ===',
+      state.a1.trim() || '(empty)',
+      '',
+      '=== STUDENT ANSWER 1.2 (' + words(state.a2).length + ' words) ===',
+      state.a2.trim() || '(empty)',
+      '',
+      '=== OUTPUT FORMAT (JSON only) ===',
+      '{"task1":{"content":0,"comparison":0,"language":0,"comments":["2-4 short specific comments about 1.1"]},',
+      ' "task2":{"task":0,"organisation":0,"vocabulary":0,"grammar":0,"comments":["3-5 short specific comments about 1.2"]},',
+      ' "overall":"Two or three sentences to the student summarising the performance out of 40.",',
+      ' "strengths":["up to 4 specific strengths, quoting the student where useful"],',
+      ' "improvements":["up to 4 specific, actionable improvements"],',
+      ' "corrections":[{"original":"exact phrase the student wrote","corrected":"corrected phrase","note":"short reason"}]}',
+      'Include up to 8 of the most important language corrections, quoting the student exactly. All scores are integers within the stated maximums.'
+    ].join('\n');
+  }
+
+  function fallbackMark(set) {
+    var a1 = state.a1 || '', a2 = state.a2 || '';
+    var l1 = a1.toLowerCase(), l2 = a2.toLowerCase();
+    var w1 = words(a1).length, w2 = words(a2).length, s1 = sentences(a1), p2 = paragraphs(a2);
+    var c1 = [], c2 = [], strengths = [], improvements = [];
+    function hits(text, list) { var n = 0, seen = {}; list.forEach(function (k) { if (text.indexOf(k) !== -1 && !seen[k]) { seen[k] = 1; n++; } }); return n; }
+    function copied(text) { var p = set.passage.join(' ').toLowerCase().split(/\s+/); var t = ' ' + text.replace(/\s+/g, ' ') + ' '; var n = 0; for (var i = 0; i + 8 <= p.length; i += 4) { if (t.indexOf(' ' + p.slice(i, i + 8).join(' ') + ' ') !== -1) n++; } return n; }
+
+    var t1 = { content: 0, comparison: 0, language: 0 };
+    if (w1 >= 15) {
+      var hA = hits(l1, set.sideA.keys), hB = hits(l1, set.sideB.keys);
+      t1.content = Math.min(3, hA) + Math.min(3, hB);
+      if (hA === 0) c1.push(set.sideA.name + '\'s point of view is missing or unclear.');
+      if (hB === 0) c1.push(set.sideB.name + '\'s point of view is missing or unclear.');
+      var link1 = hits(l1, ['whereas', 'while', 'unlike', 'however', 'on the other hand', 'in contrast', 'both', 'but', 'disagree', 'differ']);
+      t1.comparison = Math.min(5, 1 + link1 * 1.5);
+      var cp = copied(l1);
+      if (cp > 0) { t1.comparison = Math.min(t1.comparison, 2); c1.push('Parts of the summary copy the text word for word. Paraphrase in your own words.'); }
+      else if (link1 >= 2) strengths.push('The summary uses contrast language to set the two views against each other.');
+      t1.language = (s1 >= 4 && s1 <= 5) ? 4 : ((s1 === 3 || s1 === 6) ? 3 : 2);
+      if (s1 < 4 || s1 > 5) c1.push('The summary has ' + s1 + ' sentences; the task asks for 4–5.');
+      if (/(^|[.!?]\s+)[a-z]/.test(a1.trim())) { t1.language = Math.max(1, t1.language - 1); c1.push('Some sentences do not start with a capital letter.'); }
+    } else { c1.push('The summary is too short to be assessed properly.'); }
+    t1.content = Math.round(t1.content); t1.comparison = Math.round(t1.comparison);
+
+    var t2 = { task: 0, organisation: 0, vocabulary: 0, grammar: 0 };
+    if (w2 >= 40) {
+      t2.task = w2 >= 220 ? 4 : (w2 >= 180 ? 3 : (w2 >= 120 ? 2 : 1));
+      if (w2 < 220) c2.push('The essay has ' + w2 + ' words; the minimum is 220.'); else strengths.push('The essay meets the 220-word minimum.');
+      var sides = (hits(l2, set.sideA.keys) > 0 ? 1 : 0) + (hits(l2, set.sideB.keys) > 0 ? 1 : 0);
+      if (sides === 2) t2.task += 1; else c2.push('Make sure you compare BOTH sides of the topic clearly.');
+      if (/(i agree|i believe|in my opinion|from my point of view|personally|i think|i prefer|my view)/.test(l2)) t2.task += 1; else c2.push('State clearly which point of view you agree with.');
+      if (/(for example|for instance|such as|uae|dubai|abu dhabi|sharjah|ajman|fujairah|ras al khaimah|al ain|umm al quwain|my family|my father|my mother|last year|last summer|when i)/.test(l2)) t2.task += 1; else c2.push('Add a concrete example from your own life or from the UAE.');
+      t2.task = Math.min(7, t2.task);
+
+      var lk = hits(l2, LINKERS);
+      t2.organisation = (p2 >= 4 ? 3 : (p2 === 3 ? 2 : 1)) + (lk >= 6 ? 3 : (lk >= 3 ? 2 : 1));
+      if (p2 < 4) c2.push('Use at least four paragraphs: introduction, two body paragraphs and a conclusion. Leave an empty line between them.');
+      if (lk >= 6) strengths.push('A good range of linking words organises the comparison.'); else improvements.push('Use more linkers such as whereas, on the other hand, in contrast, for example and to sum up.');
+
+      var wb = hits(l2, WORD_BANK);
+      var uniq = {}; words(l2).forEach(function (w) { uniq[w] = 1; }); var ttr = Object.keys(uniq).length / Math.max(1, w2);
+      t2.vocabulary = (wb >= 8 ? 4 : (wb >= 5 ? 3 : (wb >= 3 ? 2 : 1))) + (ttr > 0.56 ? 2 : (ttr > 0.46 ? 1 : 0));
+      if (wb < 5) improvements.push('Use more topic vocabulary from the Smart Homes word bank (device, sensor, convenient, reliable, personal data, rely on...).');
+
+      var g = 5; // the rule-based checker cannot verify grammar fully, so it never awards full marks here
+      var issues = 0;
+      if (/\bmore (better|worse|cheaper|easier|safer|faster|bigger|smaller|higher|lower)\b/.test(l2)) { issues++; c2.push('Comparatives: use either -er OR more, never both (e.g. "cheaper", not "more cheaper").'); }
+      if (/(^|\s)i(\s|')/.test(a2) === false && /(^|\s)i\s/.test(a2)) { issues++; }
+      var lowerStarts = (a2.match(/(^|[.!?]\s+)[a-z]/g) || []).length; if (lowerStarts > 0) { issues++; c2.push('Start every sentence with a capital letter.'); }
+      var longS = (a2.match(/[^.!?]{260,}[.!?]/g) || []).length; if (longS > 0) { issues++; c2.push('Some sentences are very long. Break them into shorter sentences.'); }
+      if (/\b(alot|dont|cant|wont|didnt|doesnt|isnt|its a|their is|there house|then me|than I am go)\b/.test(l2)) { issues++; c2.push('Check spelling and apostrophes (a lot, don\'t, can\'t, its/it\'s, their/there).'); }
+      t2.grammar = Math.max(1, g - issues * 1.5);
+      t2.grammar = Math.round(t2.grammar);
+      if (issues === 0) strengths.push('No common surface errors were detected by the automatic checker.');
+    } else { c2.push('The essay is too short to be assessed properly.'); }
+
+    if (!strengths.length) strengths.push('Keep practising: complete both tasks fully next time.');
+    improvements.push('Plan before writing: one view, the other view, your opinion with a UAE example, then a conclusion.');
+    return normalise({ task1: { content: t1.content, comparison: t1.comparison, language: t1.language, comments: c1 }, task2: { task: t2.task, organisation: t2.organisation, vocabulary: t2.vocabulary, grammar: t2.grammar, comments: c2 }, overall: 'This is an estimated mark based on length, structure, linking words and topic vocabulary. Content accuracy and grammar were only partly checked.', strengths: strengths, improvements: improvements, corrections: [] });
+  }
+
+  var marking = false;
+  async function grade() {
+    if (marking) return;
+    marking = true;
+    var set = SETS[state.setIdx];
+    $('grading').hidden = false; $('results-body').hidden = true;
+    $('grading-text').textContent = 'Marking your writing… this can take up to a minute.';
+    var sample = null;
+    try { sample = (window.claude && window.claude.use) ? await window.claude.use('sample') : null; } catch (e) { sample = null; }
+    if (sample && (words(state.a1).length + words(state.a2).length) > 0) {
+      try {
+        var out = await sample.json(buildPrompt(set), { modelTier: 'default', cache: false });
+        state.result = normalise(out || {}); state.resultSource = 'ai'; save();
+        render(state.result); marking = false; return;
+      } catch (e) {
+        var code = e && e.code ? e.code : 'error';
+        $('grading-text').textContent = code === 'not_granted' ? 'AI marking was not allowed. Using the built-in estimate instead…' : 'AI marking did not complete (' + code + '). Using the built-in estimate instead…';
+      }
+    }
+    state.result = fallbackMark(set); state.resultSource = 'rules'; save();
+    setTimeout(function () { render(state.result); marking = false; }, 600);
+  }
+  $('btn-retry-mark').addEventListener('click', function () { state.result = null; state.resultSource = ''; save(); grade(); });
+
+  $('btn-new').addEventListener('click', function () {
+    var keepName = state.name;
+    state = { name: keepName, setIdx: null, startAt: null, violations: 0, a1: '', a2: '', submitted: false, submitReason: '', result: null, resultSource: '' };
+    save();
+    $('student-name').value = keepName || '';
+    show('screen-start');
+    window.scrollTo(0, 0);
+  });
+
+  // ---------- Boot ----------
+  if (state.name) $('student-name').value = state.name;
+  if (state.submitted && state.setIdx != null) {
+    openResults();
+    if (!state.result) grade();
+  } else if (state.startAt && state.setIdx != null) {
+    if (remaining() <= 0) { examActive = true; openExam(); }
+    else { openExam(); flash('Exam resumed. Your answers and the clock were restored.', 'info'); }
+  } else {
+    show('screen-start');
+  }
+})();
+</script>
