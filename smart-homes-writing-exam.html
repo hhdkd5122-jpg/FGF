@@ -156,6 +156,31 @@
         <button class="btn" id="btn-begin">Begin exam</button>
         <span class="muted">One of three Smart Homes sets is chosen at random.</span>
       </div>
+      <p class="muted" id="marking-status" style="font-size:0.9rem"></p>
+    </div>
+
+    <div class="card stack" id="teacher-card">
+      <div class="task-head">
+        <h3>Teacher setup</h3>
+        <button class="btn secondary" id="btn-teacher-toggle" type="button">Open</button>
+      </div>
+      <div class="stack" id="teacher-panel" hidden>
+        <p>To give students a downloadable file that marks with Claude, paste a Claude API key here and create a student copy. The key is stored inside that copy so students only open the file and start.</p>
+        <label for="api-key"><b>Claude API key</b></label>
+        <input type="text" id="api-key" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+        <label for="api-model"><b>Marking model</b></label>
+        <select id="api-model" style="font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--fg);max-width:360px">
+          <option value="claude-opus-5-5">Claude Opus 5.5 (most accurate, about 5 fils per exam)</option>
+          <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (fast, about 2 fils per exam)</option>
+          <option value="claude-haiku-5-5">Claude Haiku 5.5 (cheapest)</option>
+        </select>
+        <div class="actions">
+          <button class="btn" id="btn-make-copy" type="button">Create student copy</button>
+          <button class="btn secondary" id="btn-test-key" type="button">Test key</button>
+          <span id="teacher-status" class="muted"></span>
+        </div>
+        <div class="banner warn">Anyone who opens the student file can read the key inside it. Create the key in the Claude Console with a low monthly spending limit, and delete it after the exam.</div>
+      </div>
     </div>
   </section>
 
@@ -289,6 +314,10 @@
   var DURATION = 90 * 60; // seconds
   var MAX_VIOL = 3;
   var KEY = 'shwe-v1';
+  // Marking configuration embedded by "Create student copy". Leave as is in the teacher master file.
+  var EMBEDDED = /*CFG*/{"k":"","m":"claude-opus-5-5"}/*CFG*/;
+  var API_URL = 'https://api.anthropic.com/v1/messages';
+  function embeddedKey() { try { return EMBEDDED.k ? atob(EMBEDDED.k.split('').reverse().join('')) : ''; } catch (e) { return ''; } }
 
   // ---------- Exam sets (Smart Homes theme, UAE context) ----------
   var SETS = [
@@ -526,9 +555,9 @@
     $('band').textContent = bandFor(r.total);
     $('split').textContent = 'Task 1.1 Summary: ' + r.task1.total + ' / 15   •   Task 1.2 Essay: ' + r.task2.total + ' / 25';
     $('overall').textContent = r.overall || '';
-    $('marker-note').textContent = state.resultSource === 'ai'
+    $('marker-note').textContent = (state.resultSource === 'ai' || state.resultSource === 'api')
       ? 'Marked by Claude against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25).'
-      : 'Estimated by the built-in rule-based marker (word counts, structure, linkers, topic vocabulary). Open this page inside claude.ai for full AI marking of content and grammar.';
+      : 'Estimated by the built-in rule-based marker (word counts, structure, linkers, topic vocabulary). ' + (embeddedKey() ? 'Claude marking failed this time; press "Mark again" to retry.' : 'This file has no marking key, so content and grammar were only partly checked.');
     $('t1-total').textContent = r.task1.total + ' / 15';
     $('t1-table').innerHTML = '<thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>' + row('Content: both views and main ideas covered', r.task1.content, 6) + row('Comparison and contrast in own words', r.task1.comparison, 5) + row('Language, accuracy and length (4–5 sentences)', r.task1.language, 4) + '</tbody>';
     $('t1-comments').innerHTML = r.task1.comments.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
@@ -541,7 +570,7 @@
       $('corr-card').hidden = false;
       $('corr-table').innerHTML = '<thead><tr><th>You wrote</th><th>Better</th><th>Why</th></tr></thead><tbody>' + r.corrections.map(function (c) { return '<tr><td class="o">' + esc(c.original) + '</td><td class="c">' + esc(c.corrected) + '</td><td>' + esc(c.note || '') + '</td></tr>'; }).join('') + '</tbody>';
     } else { $('corr-card').hidden = true; }
-    $('btn-retry-mark').hidden = state.resultSource === 'ai';
+    $('btn-retry-mark').hidden = (state.resultSource === 'ai' || state.resultSource === 'api');
   }
 
   // ---------- Marking ----------
@@ -670,9 +699,99 @@
         $('grading-text').textContent = code === 'not_granted' ? 'AI marking was not allowed. Using the built-in estimate instead…' : 'AI marking did not complete (' + code + '). Using the built-in estimate instead…';
       }
     }
+    if (embeddedKey() && (words(state.a1).length + words(state.a2).length) > 0) {
+      try {
+        $('grading-text').textContent = 'Marking your writing with Claude… this can take up to a minute.';
+        var out2 = await apiMark(buildPrompt(set), embeddedKey(), EMBEDDED.m || 'claude-opus-5-5');
+        state.result = normalise(out2 || {}); state.resultSource = 'api'; save();
+        render(state.result); marking = false; return;
+      } catch (e2) {
+        $('grading-text').textContent = 'Claude marking failed (' + (e2 && e2.message ? e2.message : 'error') + '). Showing the built-in estimate instead…';
+        await new Promise(function (r) { setTimeout(r, 1800); });
+      }
+    }
     state.result = fallbackMark(set); state.resultSource = 'rules'; save();
     setTimeout(function () { render(state.result); marking = false; }, 600);
   }
+
+  // Direct call to the Claude API from the browser (used by downloaded student copies).
+  async function apiMark(prompt, key, model) {
+    var ctl = new AbortController();
+    var t = setTimeout(function () { ctl.abort(); }, 180000);
+    var res;
+    try {
+      res = await fetch(API_URL, {
+        method: 'POST', signal: ctl.signal,
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2026-10-21',
+          'anthropic-beta': 'server-side-fallback-2026-07-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 8000,
+          fallbacks: 'default',
+          output_config: { effort: 'medium' },
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    } catch (e) { clearTimeout(t); throw new Error(e && e.name === 'AbortError' ? 'timed out' : 'no connection to the marking service'); }
+    clearTimeout(t);
+    var body = null; try { body = await res.json(); } catch (e) {}
+    if (!res.ok) {
+      var msg = body && body.error && body.error.message ? body.error.message : ('HTTP ' + res.status);
+      if (res.status === 401) msg = 'the marking key is invalid or was deleted';
+      if (res.status === 429) msg = 'too many students marking at once, try again in a minute';
+      throw new Error(msg);
+    }
+    if (body.stop_reason === 'refusal') throw new Error('the marking service declined this request');
+    var text = (body.content || []).filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('\n');
+    var m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('no marks were returned');
+    return JSON.parse(m[0]);
+  }
+
+  // ---------- Teacher setup ----------
+  function inClaudeViewer() { return !!(window.claude && window.claude.use); }
+  (function teacherTools() {
+    var card = $('teacher-card');
+    var status = $('marking-status');
+    if (embeddedKey()) {
+      status.textContent = 'Marking: Claude AI marking is set up in this file (model ' + (EMBEDDED.m || 'claude-opus-5-5') + ').';
+      card.hidden = true; return;
+    }
+    if (inClaudeViewer()) { status.textContent = 'Marking: Claude AI marking through claude.ai.'; card.hidden = true; return; }
+    status.textContent = 'Marking: rule-based estimate only. A teacher can open Teacher setup to create a copy with Claude marking.';
+    $('btn-teacher-toggle').addEventListener('click', function () {
+      var pnl = $('teacher-panel'); pnl.hidden = !pnl.hidden; this.textContent = pnl.hidden ? 'Open' : 'Close';
+    });
+    $('btn-test-key').addEventListener('click', async function () {
+      var k = $('api-key').value.trim(); var st = $('teacher-status');
+      if (!k) { st.textContent = 'Paste a key first.'; return; }
+      st.textContent = 'Testing…';
+      try {
+        var r = await apiMark('Reply with exactly this JSON and nothing else: {"ok":true}', k, $('api-model').value);
+        st.textContent = r && r.ok ? 'Key works.' : 'Key works (unexpected reply).';
+      } catch (e) { st.textContent = 'Test failed: ' + e.message; }
+    });
+    $('btn-make-copy').addEventListener('click', function () {
+      var k = $('api-key').value.trim(); var st = $('teacher-status');
+      if (!k) { st.textContent = 'Paste a key first.'; return; }
+      var cfg = JSON.stringify({ k: btoa(k).split('').reverse().join(''), m: $('api-model').value });
+      var pnl = $('teacher-panel'); var wasOpen = !pnl.hidden; pnl.hidden = true; $('btn-teacher-toggle').textContent = 'Open';
+      var html = document.documentElement.outerHTML;
+      pnl.hidden = !wasOpen; if (wasOpen) $('btn-teacher-toggle').textContent = 'Close';
+      html = html.replace(/\/\*CFG\*\/\{[^]*?\}\/\*CFG\*\//, '/*CFG*/' + cfg + '/*CFG*/');
+      if (html.indexOf(cfg) === -1) { st.textContent = 'Could not build the copy in this browser.'; return; }
+      if (!/^<!doctype/i.test(html)) html = '<!doctype html>\n' + html;
+      var blob = new Blob([html], { type: 'text/html' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Smart_Homes_Writing_Exam_Students.html';
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      st.textContent = 'Student copy downloaded. Share that file with students.';
+    });
+  })();
   $('btn-retry-mark').addEventListener('click', function () { state.result = null; state.resultSource = ''; save(); grade(); });
 
   $('btn-new').addEventListener('click', function () {
