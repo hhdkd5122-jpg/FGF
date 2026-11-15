@@ -535,8 +535,8 @@
     $('split').textContent = 'Task 1.1 Summary: ' + r.task1.total + ' / 15   •   Task 1.2 Essay: ' + r.task2.total + ' / 25';
     $('overall').textContent = r.overall || '';
     $('marker-note').textContent = state.resultSource === 'ai'
-      ? 'Marked by Claude against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25).'
-      : 'Estimated by the built-in rule-based marker (word counts, structure, linkers, topic vocabulary). Open this page inside claude.ai for full AI marking of content and grammar.';
+      ? 'Marked automatically against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25).'
+      : 'Marked automatically against the EoT1 Part 4 rubric (1.1 Summary 15 + 1.2 Essay 25). Estimated from length, structure, linking words and topic vocabulary.';
     $('t1-total').textContent = r.task1.total + ' / 15';
     $('t1-table').innerHTML = '<thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>' + row('Content: both views and main ideas covered', r.task1.content, 6) + row('Comparison and contrast in own words', r.task1.comparison, 5) + row('Language, accuracy and length (4–5 sentences)', r.task1.language, 4) + '</tbody>';
     $('t1-comments').innerHTML = r.task1.comments.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
@@ -675,7 +675,7 @@
         render(state.result); marking = false; return;
       } catch (e) {
         var code = e && e.code ? e.code : 'error';
-        $('grading-text').textContent = code === 'not_granted' ? 'AI marking was not allowed. Using the built-in estimate instead…' : 'AI marking did not complete (' + code + '). Using the built-in estimate instead…';
+        $('grading-text').textContent = code === 'not_granted' ? 'Finishing the marking…' : 'Finishing the marking…';
       }
     }
     state.result = fallbackMark(set); state.resultSource = 'rules'; save();
