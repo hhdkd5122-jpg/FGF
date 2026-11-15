@@ -111,10 +111,6 @@
   .corr th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
   .corr td.o { color: var(--danger); text-decoration: line-through; }
   .corr td.c { color: var(--good); font-weight: 600; }
-  .answer del { background: var(--danger-soft); color: var(--danger); text-decoration: line-through; border-radius: 3px; padding: 0 2px; }
-  .answer ins { background: var(--good-soft); color: var(--good); text-decoration: none; font-weight: 600; border-radius: 3px; padding: 0 2px; }
-  .answer.fixed { border-color: var(--good); }
-  .legend { font-size: 0.8rem; color: var(--muted); }
   .answer { white-space: pre-wrap; font-family: var(--font-read); background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; line-height: 1.65; }
   .two { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
   .two > * { min-width: 0; }
@@ -281,28 +277,10 @@
       </div>
 
       <div class="card stack">
-        <h2>Your writing and the corrected version</h2>
-        <p class="legend" id="legend">Words removed from your text are shown <del>like this</del>; words added or changed in the corrected version are shown <ins>like this</ins>.</p>
-        <div class="two">
-          <div class="stack">
-            <h3>Your summary (1.1)</h3>
-            <div class="answer" id="show1"></div>
-          </div>
-          <div class="stack">
-            <h3>Corrected summary</h3>
-            <div class="answer fixed" id="fix1"></div>
-          </div>
-        </div>
-        <div class="two">
-          <div class="stack">
-            <h3>Your essay (1.2)</h3>
-            <div class="answer" id="show2"></div>
-          </div>
-          <div class="stack">
-            <h3>Corrected essay</h3>
-            <div class="answer fixed" id="fix2"></div>
-          </div>
-        </div>
+        <h3>Your summary (1.1)</h3>
+        <div class="answer" id="show1"></div>
+        <h3>Your essay (1.2)</h3>
+        <div class="answer" id="show2"></div>
       </div>
 
       <div class="actions">
@@ -512,7 +490,6 @@
     $('result-meta').textContent = (state.name ? state.name + ' • ' : '') + 'Set ' + set.id + ' • ' + set.title + ' • time used ' + Math.floor(used / 60) + ' min • ' + reasonText + ' • violations: ' + state.violations;
     $('show1').textContent = state.a1 || '(no answer)';
     $('show2').textContent = state.a2 || '(no answer)';
-    $('fix1').textContent = ''; $('fix2').textContent = '';
     show('screen-results');
     window.scrollTo(0, 0);
     if (state.result) { render(state.result); }
@@ -529,9 +506,7 @@
       task2: { task: clamp(t2.task, 7), organisation: clamp(t2.organisation, 6), vocabulary: clamp(t2.vocabulary, 6), grammar: clamp(t2.grammar, 6), comments: arr(t2.comments, 5) },
       overall: typeof r.overall === 'string' ? r.overall : '',
       strengths: arr(r.strengths, 5), improvements: arr(r.improvements, 5),
-      corrections: Array.isArray(r.corrections) ? r.corrections.filter(function (c) { return c && typeof c.original === 'string' && typeof c.corrected === 'string'; }).slice(0, 10) : [],
-      corrected_summary: typeof r.corrected_summary === 'string' ? r.corrected_summary.trim() : '',
-      corrected_essay: typeof r.corrected_essay === 'string' ? r.corrected_essay.trim() : ''
+      corrections: Array.isArray(r.corrections) ? r.corrections.filter(function (c) { return c && typeof c.original === 'string' && typeof c.corrected === 'string'; }).slice(0, 10) : []
     };
     o.task1.total = o.task1.content + o.task1.comparison + o.task1.language;
     o.task2.total = o.task2.task + o.task2.organisation + o.task2.vocabulary + o.task2.grammar;
@@ -570,52 +545,11 @@
     $('t2-comments').innerHTML = r.task2.comments.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
     $('strengths').innerHTML = r.strengths.length ? r.strengths.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') : '<li class="muted">None recorded.</li>';
     $('improvements').innerHTML = r.improvements.length ? r.improvements.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') : '<li class="muted">None recorded.</li>';
-    renderCorrected('show1', 'fix1', state.a1 || '', r.corrected_summary);
-    renderCorrected('show2', 'fix2', state.a2 || '', r.corrected_essay);
-    $('legend').hidden = !(r.corrected_summary || r.corrected_essay);
     if (r.corrections.length) {
       $('corr-card').hidden = false;
       $('corr-table').innerHTML = '<thead><tr><th>You wrote</th><th>Better</th><th>Why</th></tr></thead><tbody>' + r.corrections.map(function (c) { return '<tr><td class="o">' + esc(c.original) + '</td><td class="c">' + esc(c.corrected) + '</td><td>' + esc(c.note || '') + '</td></tr>'; }).join('') + '</tbody>';
     } else { $('corr-card').hidden = true; }
     $('btn-retry-mark').hidden = state.resultSource === 'ai';
-  }
-
-  // ---------- Corrected version with highlighted changes ----------
-  function tokens(t) { return String(t || '').match(/\s+|[^\s]+/g) || []; }
-  function wordDiff(a, b) {
-    var A = tokens(a), B = tokens(b);
-    var n = A.length, m = B.length;
-    if (n * m > 400000) return null;
-    var L = []; for (var i = 0; i <= n; i++) { L.push(new Uint16Array(m + 1)); }
-    for (i = n - 1; i >= 0; i--) for (var j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
-    var ops = []; i = 0; j = 0;
-    while (i < n && j < m) {
-      if (A[i] === B[j]) { ops.push(['=', A[i]]); i++; j++; }
-      else if (L[i + 1][j] >= L[i][j + 1]) { ops.push(['-', A[i]]); i++; }
-      else { ops.push(['+', B[j]]); j++; }
-    }
-    while (i < n) ops.push(['-', A[i++]]);
-    while (j < m) ops.push(['+', B[j++]]);
-    return ops;
-  }
-  function renderCorrected(origId, fixId, original, corrected) {
-    var o = $(origId), f = $(fixId);
-    if (!original.trim()) { o.textContent = '(no answer)'; f.textContent = '(no answer)'; return; }
-    if (!corrected) {
-      o.textContent = original;
-      f.innerHTML = '<span class="muted">' + esc(state.resultSource === 'rules' ? 'A corrected version needs Claude marking. Press "Mark again" or open this page in claude.ai.' : 'No corrected version was returned.') + '</span>';
-      return;
-    }
-    var ops = wordDiff(original, corrected);
-    if (!ops) { o.textContent = original; f.textContent = corrected; return; }
-    var oh = '', fh = '';
-    ops.forEach(function (op) {
-      var t = esc(op[1]);
-      if (op[0] === '=') { oh += t; fh += t; }
-      else if (op[0] === '-') { oh += /^\s+$/.test(op[1]) ? t : '<del>' + t + '</del>'; }
-      else { fh += /^\s+$/.test(op[1]) ? t : '<ins>' + t + '</ins>'; }
-    });
-    o.innerHTML = oh; f.innerHTML = fh;
   }
 
   // ---------- Marking ----------
@@ -658,11 +592,8 @@
       ' "overall":"Two or three sentences to the student summarising the performance out of 40.",',
       ' "strengths":["up to 4 specific strengths, quoting the student where useful"],',
       ' "improvements":["up to 4 specific, actionable improvements"],',
-      ' "corrections":[{"original":"exact phrase the student wrote","corrected":"corrected phrase","note":"short reason"}],',
-      ' "corrected_summary":"the student\'s 1.1 answer rewritten with every grammar, spelling, punctuation and word-choice error corrected",',
-      ' "corrected_essay":"the student\'s 1.2 essay rewritten with every grammar, spelling, punctuation and word-choice error corrected"}',
-      'Include up to 8 of the most important language corrections, quoting the student exactly. All scores are integers within the stated maximums.',
-      'For corrected_summary and corrected_essay: keep the student\'s ideas, order, paragraphs (separate paragraphs with a blank line) and roughly the same length. Fix errors and weak or repeated wording, improve a linker where needed, but do not add new ideas, examples or paragraphs. If an answer is empty, return an empty string.'
+      ' "corrections":[{"original":"exact phrase the student wrote","corrected":"corrected phrase","note":"short reason"}]}',
+      'Include up to 8 of the most important language corrections, quoting the student exactly. All scores are integers within the stated maximums.'
     ].join('\n');
   }
 
